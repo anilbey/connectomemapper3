@@ -218,8 +218,6 @@ class AnatomicalPipeline(cmp_common.Pipeline):
             True if inputs are available
         """
         print('**** Check Inputs  ****')
-        t1_available = False
-        t1_json_available = False
         valid_inputs = False
 
         print("> Looking in %s for...." % self.base_directory)
@@ -231,21 +229,14 @@ class AnatomicalPipeline(cmp_common.Pipeline):
                 self.subject_directory, 'anat', self.subject + '_T1w.nii.gz')
             files = layout.get(subject=subjid, suffix='T1w',
                                extensions='.nii.gz')
-            if len(files) > 0:
-                T1_file = os.path.join(files[0].dirname, files[0].filename)
-                print(T1_file)
-            else:
-                return
         else:
             sessid = self.global_conf.subject_session.split("-")[1]
             files = layout.get(subject=subjid, suffix='T1w',
                                extensions='.nii.gz', session=sessid)
-            if len(files) > 0:
-                T1_file = os.path.join(files[0].dirname, files[0].filename)
-                print(T1_file)
-            else:
-                return
-
+        if len(files) <= 0:
+            return
+        T1_file = os.path.join(files[0].dirname, files[0].filename)
+        print(T1_file)
         print("... t1_file : %s" % T1_file)
 
         if self.global_conf.subject_session == '':
@@ -253,31 +244,20 @@ class AnatomicalPipeline(cmp_common.Pipeline):
                 self.subject_directory, 'anat', self.subject + '_T1w.json')
             files = layout.get(subject=subjid, suffix='T1w',
                                extensions='.json')
-            if len(files) > 0:
-                T1_json_file = os.path.join(
-                    files[0].dirname, files[0].filename)
-                print(T1_json_file)
-            else:
-                T1_json_file = 'NotFound'
         else:
             sessid = self.global_conf.subject_session.split("-")[1]
             files = layout.get(subject=subjid, suffix='T1w',
                                extensions='.json', session=sessid)
-            if len(files) > 0:
-                T1_json_file = os.path.join(
-                    files[0].dirname, files[0].filename)
-                print(T1_json_file)
-            else:
-                T1_json_file = 'NotFound'
-
+        if len(files) > 0:
+            T1_json_file = os.path.join(
+                files[0].dirname, files[0].filename)
+            print(T1_json_file)
+        else:
+            T1_json_file = 'NotFound'
         print("... t1_json_file : %s" % T1_json_file)
 
-        if os.path.isfile(T1_file):
-            t1_available = True
-
-        if os.path.isfile(T1_json_file):
-            t1_json_available = True
-
+        t1_available = bool(os.path.isfile(T1_file))
+        t1_json_available = bool(os.path.isfile(T1_json_file))
         if t1_available:
             # Copy T1w data to derivatives / cmp  / subject / anat
             if self.global_conf.subject_session == '':
@@ -306,19 +286,14 @@ class AnatomicalPipeline(cmp_common.Pipeline):
                 if not os.path.isfile(out_T1_json_file):
                     shutil.copy(src=T1_json_file, dst=out_T1_json_file)
 
+        elif self.global_conf.subject_session == '':
+            input_message = 'Error during inputs check. No anatomical data available in folder ' + os.path.join(
+                self.base_directory, self.subject) + '/anat/!'
         else:
-            if self.global_conf.subject_session == '':
-                input_message = 'Error during inputs check. No anatomical data available in folder ' + os.path.join(
-                    self.base_directory, self.subject) + '/anat/!'
-            else:
-                input_message = 'Error during inputs check. No anatomical data available in folder ' + os.path.join(
-                    self.base_directory, self.subject, self.global_conf.subject_session) + '/anat/!'
+            input_message = 'Error during inputs check. No anatomical data available in folder ' + os.path.join(
+                self.base_directory, self.subject, self.global_conf.subject_session) + '/anat/!'
 
-        if gui:
-            print(input_message)
-
-        else:
-            print(input_message)
+        print(input_message)
 
         if t1_available:
             valid_inputs = True
@@ -357,14 +332,13 @@ class AnatomicalPipeline(cmp_common.Pipeline):
         if self.global_conf.subject_session == '':
             anat_deriv_subject_directory = os.path.join(
                 self.output_directory, "cmp", self.subject, 'anat')
+        elif self.global_conf.subject_session not in subject:
+            anat_deriv_subject_directory = os.path.join(self.output_directory, "cmp", subject,
+                                                        self.global_conf.subject_session, 'anat')
+            subject = "_".join((subject, self.global_conf.subject_session))
         else:
-            if self.global_conf.subject_session not in subject:
-                anat_deriv_subject_directory = os.path.join(self.output_directory, "cmp", subject,
-                                                            self.global_conf.subject_session, 'anat')
-                subject = "_".join((subject, self.global_conf.subject_session))
-            else:
-                anat_deriv_subject_directory = os.path.join(self.output_directory, "cmp", subject.split("_")[0],
-                                                            self.global_conf.subject_session, 'anat')
+            anat_deriv_subject_directory = os.path.join(self.output_directory, "cmp", subject.split("_")[0],
+                                                        self.global_conf.subject_session, 'anat')
 
         T1_file = os.path.join(anat_deriv_subject_directory,
                                subject + '_desc-head_T1w.nii.gz')
@@ -416,16 +390,22 @@ class AnatomicalPipeline(cmp_common.Pipeline):
         cnt1 = 0
         cnt2 = 0
         for roiv_file in roiv_files:
-            cnt1 = cnt1 + 1
+            cnt1 += 1
             if os.path.isfile(roiv_file):
-                cnt2 = cnt2 + 1
+                cnt2 += 1
         if cnt1 == cnt2:
             roivs_available = True
         else:
             error_message += "  .. ERROR : Missing %g/%g anatomical parcellation output files. Please re-run the anatomical pipeline" % (
                 cnt1 - cnt2, cnt1)
 
-        if t1_available is True and brain_available is True and brainmask_available is True and wm_available is True and roivs_available is True:
+        if (
+            t1_available
+            and brain_available
+            and brainmask_available
+            and wm_available
+            and roivs_available
+        ):
             print("  .. INFO: Valid derivatives for anatomical pipeline")
             valid_output = True
 
@@ -684,17 +664,19 @@ class AnatomicalPipeline(cmp_common.Pipeline):
         ])
 
         if self.stages['Segmentation'].enabled:
-            if self.stages['Segmentation'].config.seg_tool == "Freesurfer":
-
-                if self.stages['Segmentation'].config.use_existing_freesurfer_data is False:
-                    self.stages['Segmentation'].config.freesurfer_subjects_dir = os.path.join(self.output_directory,
-                                                                                              'freesurfer')
-                    print("Freesurfer_subjects_dir: %s" %
-                          self.stages['Segmentation'].config.freesurfer_subjects_dir)
-                    self.stages['Segmentation'].config.freesurfer_subject_id = os.path.join(self.output_directory,
-                                                                                            'freesurfer', self.subject)
-                    print("Freesurfer_subject_id: %s" %
-                          self.stages['Segmentation'].config.freesurfer_subject_id)
+            if (
+                self.stages['Segmentation'].config.seg_tool == "Freesurfer"
+                and self.stages['Segmentation'].config.use_existing_freesurfer_data
+                is False
+            ):
+                self.stages['Segmentation'].config.freesurfer_subjects_dir = os.path.join(self.output_directory,
+                                                                                          'freesurfer')
+                print("Freesurfer_subjects_dir: %s" %
+                      self.stages['Segmentation'].config.freesurfer_subjects_dir)
+                self.stages['Segmentation'].config.freesurfer_subject_id = os.path.join(self.output_directory,
+                                                                                        'freesurfer', self.subject)
+                print("Freesurfer_subject_id: %s" %
+                      self.stages['Segmentation'].config.freesurfer_subject_id)
 
             seg_flow = self.create_stage_flow("Segmentation")
 

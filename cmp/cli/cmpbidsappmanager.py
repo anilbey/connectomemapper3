@@ -79,12 +79,10 @@ def main():
     if argc == 1:  # no args, launch the GUI
         mw = gui.CMP_MainWindow()
         _ = mw.configure_traits()
-        exit_code = 0
+        return 0
     else:
         usage()
-        exit_code = 2
-
-    return exit_code
+        return 2
 
 
 if __name__ == "__main__":

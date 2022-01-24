@@ -70,5 +70,4 @@ class Stage(HasTraits):
         unfinished_files = [os.path.join(dirpath, f)
                             for dirpath, dirnames, files in os.walk(self.stage_dir)
                             for f in files if f.endswith('_unfinished.json')]
-        nb_of_unfinished_files = len(unfinished_files)
-        return nb_of_unfinished_files
+        return len(unfinished_files)

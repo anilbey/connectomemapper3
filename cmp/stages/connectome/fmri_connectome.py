@@ -137,15 +137,8 @@ class ConnectomeStage(Stage):
 
             func_outputs = get_pipeline_dictionary_outputs(func_sinker_report, self.output_dir)
 
-            map_scale = "default"
-            if self.config.log_visualization:
-                map_scale = "log"
-
-            if self.config.circular_layout:
-                layout = 'circular'
-            else:
-                layout = 'matrix'
-
+            map_scale = "log" if self.config.log_visualization else "default"
+            layout = 'circular' if self.config.circular_layout else 'matrix'
             mat = func_outputs['func.@connectivity_matrices']
 
             if isinstance(mat, str):
@@ -158,7 +151,7 @@ class ConnectomeStage(Stage):
                             "showmatrix_gpickle", layout, mat, "corr", "False",
                             self.config.subject + ' - ' + con_name + ' - Correlation', map_scale]
             else:
-                for mat in func_outputs['func.@connectivity_matrices']:
+                for mat in mat:
                     if 'gpickle' in mat:
                         con_name = os.path.basename(mat).split(".")[
                             0].split("_")[-1]
@@ -167,8 +160,9 @@ class ConnectomeStage(Stage):
                                 "showmatrix_gpickle", layout, mat, "corr", "False",
                                 self.config.subject + ' - ' + con_name + ' - Correlation', map_scale]
 
-            self.inspect_outputs = sorted([key for key in list(self.inspect_outputs_dict.keys())],
-                                          key=str.lower)
+            self.inspect_outputs = sorted(
+                list(list(self.inspect_outputs_dict.keys())), key=str.lower
+            )
 
     def has_run(self):
         """Function that returns `True` if the stage has been run successfully.

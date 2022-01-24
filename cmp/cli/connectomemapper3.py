@@ -205,7 +205,6 @@ def main():
                 exit_code = 1
                 return exit_code
 
-    # Perform the anatomical and the diffusion pipelines
     elif args.dwi_pipeline_config is not None and args.func_pipeline_config is None:
 
         project.dmri_config_file = os.path.abspath(args.dwi_pipeline_config)
@@ -244,13 +243,12 @@ def main():
                     exit_code = 1
                     return exit_code
         else:
-            print_error(f'  .. ERROR: Invalid anatomical outputs for diffusion pipeline')
+            print_error('  .. ERROR: Invalid anatomical outputs for diffusion pipeline')
             print_error(f'{msg}')
             exit_code = 1
             return exit_code
 
-    # Perform the anatomical and the fMRI pipelines
-    elif args.dwi_pipeline_config is None and args.func_pipeline_config is not None:
+    elif args.dwi_pipeline_config is None:
 
         project.fmri_config_file = os.path.abspath(args.func_pipeline_config)
 
@@ -288,14 +286,12 @@ def main():
                     exit_code = 1
                     return exit_code
         else:
-            print_error(f'  .. ERROR: Invalid anatomical outputs for fMRI pipeline')
+            print_error('  .. ERROR: Invalid anatomical outputs for fMRI pipeline')
             print_error(f'{msg}')
             exit_code = 1
             return exit_code
 
-    # Perform all pipelines (anatomical/diffusion/fMRI)
-    elif args.dwi_pipeline_config is not None and args.func_pipeline_config is not None:
-
+    else:
         project.dmri_config_file = os.path.abspath(args.dwi_pipeline_config)
         project.fmri_config_file = os.path.abspath(args.func_pipeline_config)
 
@@ -346,7 +342,10 @@ def main():
                     exit_code = 1
                     return exit_code
         else:
-            print_error(f'  .. ERROR: Invalid anatomical outputs for diffusion and fMRI pipelines')
+            print_error(
+                '  .. ERROR: Invalid anatomical outputs for diffusion and fMRI pipelines'
+            )
+
             print_error(f'{msg}')
             exit_code = 1
             return exit_code

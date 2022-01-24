@@ -179,11 +179,11 @@ class Dipy_recon_config(HasTraits):
             New value of ``imaging_model``
         """
         if new == 'DSI':
-            pass
-        elif new == 'DTI':
+            return
+        if new == 'DTI':
             self.local_model_editor = {False: '1:Tensor',
                                        True: '2:Constrained Spherical Deconvolution'}
-        elif new == 'multishell' or new == 'HARDI':
+        elif new in ['multishell', 'HARDI']:
             self.local_model_editor = {True: 'Constrained Spherical Deconvolution'}
             self.local_model = True
 
@@ -198,9 +198,7 @@ class Dipy_recon_config(HasTraits):
         if new == 'Probabilistic' and self.imaging_model != 'DSI':
             self.local_model_editor = {True: 'Constrained Spherical Deconvolution'}
             self.local_model = True
-        elif new == 'Probabilistic' and self.imaging_model == 'DSI':
-            pass
-        else:
+        elif new != 'Probabilistic':
             self.local_model_editor = {False: '1:Tensor',
                                        True: '2:Constrained Spherical Deconvolution'}
 
@@ -250,7 +248,7 @@ class MRtrix_recon_config(HasTraits):
         if new == 'DTI':
             self.local_model_editor = {False: '1:Tensor',
                                        True: '2:Constrained Spherical Deconvolution'}
-        elif new == 'multishell' or new == 'HARDI':
+        elif new in ['multishell', 'HARDI']:
             self.local_model_editor = {True: 'Constrained Spherical Deconvolution'}
             self.local_model = True
 

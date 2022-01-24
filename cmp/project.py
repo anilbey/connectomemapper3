@@ -361,19 +361,19 @@ def init_dmri_project(project_info, bids_layout, is_new_project, gui=True, debug
                                                              '%s_diffusion_config.ini' % project_info.subject)
 
             if os.path.exists(project_info.dmri_config_file):
-                warn_res = project_info.configure_traits(
-                    view='dmri_warning_view')
-                if warn_res:
-                    print("... Read : Diffusion config file (%s)" %
-                          project_info.dmri_config_file)
-                    dmri_save_config(
-                        dmri_pipeline, project_info.dmri_config_file)
-                else:
+                if not (
+                    warn_res := project_info.configure_traits(
+                        view='dmri_warning_view'
+                    )
+                ):
                     return None
+                print("... Read : Diffusion config file (%s)" %
+                      project_info.dmri_config_file)
             else:
                 print("... Create : Diffusion config file (%s)" %
                       project_info.dmri_config_file)
-                dmri_save_config(dmri_pipeline, project_info.dmri_config_file)
+            dmri_save_config(
+                dmri_pipeline, project_info.dmri_config_file)
         else:
             if debug:
                 print("int_project dmri_pipeline.global_config.subjects : ")
@@ -452,15 +452,16 @@ def init_fmri_project(project_info, bids_layout, is_new_project, gui=True, debug
                                                              '%s_fMRI_config.ini' % project_info.subject)
 
             if os.path.exists(project_info.fmri_config_file):
-                warn_res = project_info.configure_traits(
-                    view='fmri_warning_view')
-                if warn_res:
-                    print("... Read : fMRI config file (%s)" %
-                          project_info.fmri_config_file)
-                    fmri_load_config_json(
-                        fmri_pipeline, project_info.fmri_config_file)
-                else:
+                if not (
+                    warn_res := project_info.configure_traits(
+                        view='fmri_warning_view'
+                    )
+                ):
                     return None
+                print("... Read : fMRI config file (%s)" %
+                      project_info.fmri_config_file)
+                fmri_load_config_json(
+                    fmri_pipeline, project_info.fmri_config_file)
             else:
                 print("... Create : fMRI config file (%s)" %
                       project_info.fmri_config_file)
@@ -538,15 +539,18 @@ def init_anat_project(project_info, is_new_project, debug=False):
             project_info.anat_config_file = os.path.join(derivatives_directory,
                                                          '%s_anatomical_config.ini' % project_info.subject)
 
-        if os.path.exists(project_info.anat_config_file):
-            warn_res = project_info.configure_traits(view='anat_warning_view')
-            if warn_res:
-                anat_save_config(anat_pipeline, project_info.anat_config_file)
-            else:
-                return None
-        else:
+        if (
+            os.path.exists(project_info.anat_config_file)
+            and (
+                warn_res := project_info.configure_traits(
+                    view='anat_warning_view'
+                )
+            )
+            or not os.path.exists(project_info.anat_config_file)
+        ):
             anat_save_config(anat_pipeline, project_info.anat_config_file)
-
+        else:
+            return None
     else:
         if debug:
             print("int_project anat_pipeline.global_config.subjects : ")
@@ -575,19 +579,18 @@ def update_anat_last_processed(project_info, pipeline):
         Instance of `AnatomicalPipeline` object
     """
     # last date
-    if os.path.exists(os.path.join(project_info.output_directory, 'nipype', project_info.subject)):
-        # out_dirs = os.listdir(os.path.join(
-        #     project_info.output_directory, 'nipype', project_info.subject))
-        # for out in out_dirs:
-        #     if (project_info.last_date_processed == "Not yet processed" or
-        #         out > project_info.last_date_processed):
-        #         pipeline.last_date_processed = out
-        #         project_info.last_date_processed = out
-
-        if (project_info.anat_last_date_processed == "Not yet processed" or
-                pipeline.now > project_info.anat_last_date_processed):
-            pipeline.anat_last_date_processed = pipeline.now
-            project_info.anat_last_date_processed = pipeline.now
+    if os.path.exists(
+        os.path.join(
+            project_info.output_directory, 'nipype', project_info.subject
+        )
+    ) and (
+        (
+            project_info.anat_last_date_processed == "Not yet processed"
+            or pipeline.now > project_info.anat_last_date_processed
+        )
+    ):
+        pipeline.anat_last_date_processed = pipeline.now
+        project_info.anat_last_date_processed = pipeline.now
 
     # last stage
     if os.path.exists(
@@ -619,19 +622,18 @@ def update_dmri_last_processed(project_info, pipeline):
         Instance of `DiffusionPipeline` object
     """
     # last date
-    if os.path.exists(os.path.join(project_info.output_directory, 'nipype', project_info.subject)):
-        # out_dirs = os.listdir(os.path.join(
-        #     project_info.output_directory, 'nipype', project_info.subject))
-        # for out in out_dirs:
-        #     if (project_info.last_date_processed == "Not yet processed" or
-        #         out > project_info.last_date_processed):
-        #         pipeline.last_date_processed = out
-        #         project_info.last_date_processed = out
-
-        if (project_info.dmri_last_date_processed == "Not yet processed" or
-                pipeline.now > project_info.dmri_last_date_processed):
-            pipeline.dmri_last_date_processed = pipeline.now
-            project_info.dmri_last_date_processed = pipeline.now
+    if os.path.exists(
+        os.path.join(
+            project_info.output_directory, 'nipype', project_info.subject
+        )
+    ) and (
+        (
+            project_info.dmri_last_date_processed == "Not yet processed"
+            or pipeline.now > project_info.dmri_last_date_processed
+        )
+    ):
+        pipeline.dmri_last_date_processed = pipeline.now
+        project_info.dmri_last_date_processed = pipeline.now
 
     # last stage
     if os.path.exists(
@@ -659,19 +661,18 @@ def update_fmri_last_processed(project_info, pipeline):
         Instance of `fMRIPipeline` object
     """
     # last date
-    if os.path.exists(os.path.join(project_info.output_directory, 'nipype', project_info.subject)):
-        # out_dirs = os.listdir(os.path.join(
-        #     project_info.output_directory, 'nipype', project_info.subject))
-        # for out in out_dirs:
-        #     if (project_info.last_date_processed == "Not yet processed" or
-        #         out > project_info.last_date_processed):
-        #         pipeline.last_date_processed = out
-        #         project_info.last_date_processed = out
-
-        if (project_info.fmri_last_date_processed == "Not yet processed" or
-                pipeline.now > project_info.fmri_last_date_processed):
-            pipeline.fmri_last_date_processed = pipeline.now
-            project_info.fmri_last_date_processed = pipeline.now
+    if os.path.exists(
+        os.path.join(
+            project_info.output_directory, 'nipype', project_info.subject
+        )
+    ) and (
+        (
+            project_info.fmri_last_date_processed == "Not yet processed"
+            or pipeline.now > project_info.fmri_last_date_processed
+        )
+    ):
+        pipeline.fmri_last_date_processed = pipeline.now
+        project_info.fmri_last_date_processed = pipeline.now
 
     # last stage
     if os.path.exists(os.path.join(project_info.output_directory, 'nipype', project_info.subject, 'fMRI_pipeline')):
@@ -759,7 +760,6 @@ def run_individual(bids_dir, output_dir, participant_label, session_label, anat_
             anat_pipeline.check_stages_execution()
             anat_pipeline.fill_stages_outputs()
 
-    # Perform the anatomical and the diffusion pipelines
     elif dwi_pipeline_config is not None and func_pipeline_config is None:
 
         project.dmri_config_file = os.path.abspath(dwi_pipeline_config)
@@ -801,8 +801,7 @@ def run_individual(bids_dir, output_dir, participant_label, session_label, anat_
             print(msg)
             sys.exit(1)
 
-    # Perform the anatomical and the fMRI pipelines
-    elif dwi_pipeline_config is None and func_pipeline_config is not None:
+    elif dwi_pipeline_config is None:
 
         project.fmri_config_file = os.path.abspath(func_pipeline_config)
 
@@ -850,9 +849,7 @@ def run_individual(bids_dir, output_dir, participant_label, session_label, anat_
             print(msg)
             sys.exit(1)
 
-    # Perform all pipelines (anatomical/diffusion/fMRI)
-    elif dwi_pipeline_config is not None and func_pipeline_config is not None:
-
+    else:
         project.dmri_config_file = os.path.abspath(dwi_pipeline_config)
         project.fmri_config_file = os.path.abspath(func_pipeline_config)
 
