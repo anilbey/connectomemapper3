@@ -216,9 +216,6 @@ class DiffusionPipelineUI(DiffusionPipeline):
             True in all inputs of the anatomical pipeline are available
         """
         print('**** Check Inputs  ****')
-        diffusion_available = False
-        bvecs_available = False
-        bvals_available = False
         valid_inputs = False
 
         if self.global_conf.subject_session == '':
@@ -236,6 +233,7 @@ class DiffusionPipelineUI(DiffusionPipeline):
 
         subjid = self.subject.split("-")[1]
 
+        diffusion_available = False
         try:
             layout = BIDSLayout(self.base_directory)
             print("Valid BIDS dataset with %s subjects" %
@@ -335,13 +333,9 @@ class DiffusionPipelineUI(DiffusionPipeline):
                   buttons=['OK', 'Cancel'], parent=None)
             return
 
-        if os.path.isfile(bval_file):
-            bvals_available = True
-
-        if os.path.isfile(bvec_file):
-            bvecs_available = True
-
         if diffusion_available:
+            bvecs_available = bool(os.path.isfile(bvec_file))
+            bvals_available = bool(os.path.isfile(bval_file))
             if bvals_available and bvecs_available:
                 self.stages['Diffusion'].config.diffusion_imaging_model_choices = self.diffusion_imaging_model
 
@@ -372,29 +366,21 @@ class DiffusionPipelineUI(DiffusionPipeline):
                 input_message = 'Inputs check finished successfully.\nDiffusion and morphological data available.'
             else:
                 input_message = 'Error during inputs check.\nDiffusion bvec or bval files not available.'
+        elif self.global_conf.subject_session == '':
+            input_message = 'Error during inputs check. No diffusion data available in folder ' + os.path.join(
+                self.base_directory, self.subject, 'dwi') + '!'
         else:
-            if self.global_conf.subject_session == '':
-                input_message = 'Error during inputs check. No diffusion data available in folder ' + os.path.join(
-                    self.base_directory, self.subject, 'dwi') + '!'
-            else:
-                input_message = 'Error during inputs check. No diffusion data available in folder ' + os.path.join(
-                    self.base_directory, self.subject, self.global_conf.subject_session, 'dwi') + '!'
+            input_message = 'Error during inputs check. No diffusion data available in folder ' + os.path.join(
+                self.base_directory, self.subject, self.global_conf.subject_session, 'dwi') + '!'
 
-        if gui:
-            # input_notification = Check_Input_Notification(message=input_message,
-            #                                               diffusion_imaging_model_options=diffusion_imaging_model,
-            #                                               diffusion_imaging_model=diffusion_imaging_model)
-            # input_notification.configure_traits()
-            print(input_message)
-            self.global_conf.diffusion_imaging_model = self.diffusion_imaging_model
-            self.stages['Registration'].config.diffusion_imaging_model = self.diffusion_imaging_model
-            self.stages['Diffusion'].config.diffusion_imaging_model = self.diffusion_imaging_model
-        else:
-            print(input_message)
-            self.global_conf.diffusion_imaging_model = self.diffusion_imaging_model
-            self.stages['Registration'].config.diffusion_imaging_model = self.diffusion_imaging_model
-            self.stages['Diffusion'].config.diffusion_imaging_model = self.diffusion_imaging_model
-
+        # input_notification = Check_Input_Notification(message=input_message,
+        #                                               diffusion_imaging_model_options=diffusion_imaging_model,
+        #                                               diffusion_imaging_model=diffusion_imaging_model)
+        # input_notification.configure_traits()
+        print(input_message)
+        self.global_conf.diffusion_imaging_model = self.diffusion_imaging_model
+        self.stages['Registration'].config.diffusion_imaging_model = self.diffusion_imaging_model
+        self.stages['Diffusion'].config.diffusion_imaging_model = self.diffusion_imaging_model
         if diffusion_available:
             valid_inputs = True
         else:

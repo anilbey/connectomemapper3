@@ -199,17 +199,18 @@ def init_dmri_project(project_info, bids_layout, is_new_project, gui=True):
                                                              '%s_diffusion_config.json' % project_info.subject)
 
             if os.path.exists(project_info.dmri_config_file):
-                warn_res = project_info.configure_traits(view='dmri_warning_view')
-                if warn_res:
-                    print("  .. INFO: Read diffusion config file (%s)" %
-                          project_info.dmri_config_file)
-                    dmri_save_config(dmri_pipeline, project_info.dmri_config_file)
-                else:
+                if not (
+                    warn_res := project_info.configure_traits(
+                        view='dmri_warning_view'
+                    )
+                ):
                     return None
+                print("  .. INFO: Read diffusion config file (%s)" %
+                      project_info.dmri_config_file)
             else:
                 print("  .. INFO: Create diffusion config file (%s)" %
                       project_info.dmri_config_file)
-                dmri_save_config(dmri_pipeline, project_info.dmri_config_file)
+            dmri_save_config(dmri_pipeline, project_info.dmri_config_file)
         else:
             print("> Load dMRI project")
             dmri_conf_loaded = dmri_load_config_json(dmri_pipeline, project_info.dmri_config_file)
@@ -274,15 +275,16 @@ def init_fmri_project(project_info, bids_layout, is_new_project, gui=True):
                                                              '%s_fMRI_config.json' % project_info.subject)
 
             if os.path.exists(project_info.fmri_config_file):
-                warn_res = project_info.configure_traits(
-                    view='fmri_warning_view')
-                if warn_res:
-                    print("  .. INFO: Read fMRI config file (%s)" %
-                          project_info.fmri_config_file)
-                    fmri_load_config_json(
-                        fmri_pipeline, project_info.fmri_config_file)
-                else:
+                if not (
+                    warn_res := project_info.configure_traits(
+                        view='fmri_warning_view'
+                    )
+                ):
                     return None
+                print("  .. INFO: Read fMRI config file (%s)" %
+                      project_info.fmri_config_file)
+                fmri_load_config_json(
+                    fmri_pipeline, project_info.fmri_config_file)
             else:
                 print("  .. INFO: Create fMRI config file (%s)" %
                       project_info.fmri_config_file)
@@ -334,15 +336,18 @@ def init_anat_project(project_info, is_new_project):
             project_info.anat_config_file = os.path.join(derivatives_directory,
                                                          '%s_anatomical_config.json' % project_info.subject)
 
-        if os.path.exists(project_info.anat_config_file):
-            warn_res = project_info.configure_traits(view='anat_warning_view')
-            if warn_res:
-                anat_save_config(anat_pipeline, project_info.anat_config_file)
-            else:
-                return None
-        else:
+        if (
+            os.path.exists(project_info.anat_config_file)
+            and (
+                warn_res := project_info.configure_traits(
+                    view='anat_warning_view'
+                )
+            )
+            or not os.path.exists(project_info.anat_config_file)
+        ):
             anat_save_config(anat_pipeline, project_info.anat_config_file)
-
+        else:
+            return None
     else:
         print("> Load anatomical project")
         anat_conf_loaded = anat_load_config_json(anat_pipeline, project_info.anat_config_file)
@@ -374,19 +379,21 @@ def update_anat_last_processed(project_info, pipeline):
         Instance of :class:`AnatomicalPipelineUI`
     """
     # last date
-    if os.path.exists(os.path.join(project_info.base_directory, 'derivatives', 'cmp', project_info.subject)):
-        # out_dirs = os.listdir(os.path.join(
-        #    project_info.base_directory, 'derivatives', 'cmp', project_info.subject))
-        # for out in out_dirs:
-        #     if (project_info.last_date_processed == "Not yet processed" or
-        #         out > project_info.last_date_processed):
-        #         pipeline.last_date_processed = out
-        #         project_info.last_date_processed = out
-
-        if (project_info.anat_last_date_processed == "Not yet processed" or
-                pipeline.now > project_info.anat_last_date_processed):
-            pipeline.anat_last_date_processed = pipeline.now
-            project_info.anat_last_date_processed = pipeline.now
+    if os.path.exists(
+        os.path.join(
+            project_info.base_directory,
+            'derivatives',
+            'cmp',
+            project_info.subject,
+        )
+    ) and (
+        (
+            project_info.anat_last_date_processed == "Not yet processed"
+            or pipeline.now > project_info.anat_last_date_processed
+        )
+    ):
+        pipeline.anat_last_date_processed = pipeline.now
+        project_info.anat_last_date_processed = pipeline.now
 
     # last stage
     if os.path.exists(os.path.join(project_info.base_directory, 'derivatives', 'cmp', project_info.subject, 'tmp',
@@ -419,19 +426,21 @@ def update_dmri_last_processed(project_info, pipeline):
         Instance of :class:`DiffusionPipelineUI`
     """
     # last date
-    if os.path.exists(os.path.join(project_info.base_directory, 'derivatives', 'cmp', project_info.subject)):
-        # out_dirs = os.listdir(os.path.join(
-        #     project_info.base_directory, 'derivatives', 'cmp', project_info.subject))
-        # for out in out_dirs:
-        #     if (project_info.last_date_processed == "Not yet processed" or
-        #         out > project_info.last_date_processed):
-        #         pipeline.last_date_processed = out
-        #         project_info.last_date_processed = out
-
-        if (project_info.dmri_last_date_processed == "Not yet processed" or
-                pipeline.now > project_info.dmri_last_date_processed):
-            pipeline.dmri_last_date_processed = pipeline.now
-            project_info.dmri_last_date_processed = pipeline.now
+    if os.path.exists(
+        os.path.join(
+            project_info.base_directory,
+            'derivatives',
+            'cmp',
+            project_info.subject,
+        )
+    ) and (
+        (
+            project_info.dmri_last_date_processed == "Not yet processed"
+            or pipeline.now > project_info.dmri_last_date_processed
+        )
+    ):
+        pipeline.dmri_last_date_processed = pipeline.now
+        project_info.dmri_last_date_processed = pipeline.now
 
     # last stage
     if os.path.exists(os.path.join(project_info.base_directory, 'derivatives', 'cmp', project_info.subject, 'tmp',
@@ -460,19 +469,21 @@ def update_fmri_last_processed(project_info, pipeline):
         Instance of :class:`fMRIPipelineUI`
     """
     # last date
-    if os.path.exists(os.path.join(project_info.base_directory, 'derivatives', 'cmp', project_info.subject)):
-        # out_dirs = os.listdir(os.path.join(
-        #     project_info.base_directory, 'derivatives', 'cmp', project_info.subject))
-        # for out in out_dirs:
-        #     if (project_info.last_date_processed == "Not yet processed" or
-        #         out > project_info.last_date_processed):
-        #         pipeline.last_date_processed = out
-        #         project_info.last_date_processed = out
-
-        if (project_info.fmri_last_date_processed == "Not yet processed" or
-                pipeline.now > project_info.fmri_last_date_processed):
-            pipeline.fmri_last_date_processed = pipeline.now
-            project_info.fmri_last_date_processed = pipeline.now
+    if os.path.exists(
+        os.path.join(
+            project_info.base_directory,
+            'derivatives',
+            'cmp',
+            project_info.subject,
+        )
+    ) and (
+        (
+            project_info.fmri_last_date_processed == "Not yet processed"
+            or pipeline.now > project_info.fmri_last_date_processed
+        )
+    ):
+        pipeline.fmri_last_date_processed = pipeline.now
+        project_info.fmri_last_date_processed = pipeline.now
 
     # last stage
     if os.path.exists(os.path.join(project_info.base_directory, 'derivatives', 'cmp', project_info.subject, 'tmp',
@@ -605,76 +616,73 @@ class CMP_ConfigQualityWindowHandler(Handler):
                 return
 
             self.anat_pipeline = init_anat_project(new_project, True)
-            if self.anat_pipeline is not None:
-                anat_inputs_checked = self.anat_pipeline.check_input(
-                    bids_layout)
-                if anat_inputs_checked:
-                    ui_info.ui.context["object"].project_info = new_project
-                    self.anat_pipeline.number_of_cores = new_project.number_of_cores
-                    ui_info.ui.context["object"].anat_pipeline = self.anat_pipeline
-                    self.anat_inputs_checked = anat_inputs_checked
-                    ui_info.ui.context["object"].project_info.t1_available = self.anat_inputs_checked
+            if self.anat_pipeline is not None and (
+                anat_inputs_checked := self.anat_pipeline.check_input(bids_layout)
+            ):
+                ui_info.ui.context["object"].project_info = new_project
+                self.anat_pipeline.number_of_cores = new_project.number_of_cores
+                ui_info.ui.context["object"].anat_pipeline = self.anat_pipeline
+                self.anat_inputs_checked = anat_inputs_checked
+                ui_info.ui.context["object"].project_info.t1_available = self.anat_inputs_checked
 
-                    ui_info.ui.context["object"].project_info.on_trait_change(
-                        ui_info.ui.context["object"].update_subject_anat_pipeline, 'subject')
-                    ui_info.ui.context["object"].project_info.on_trait_change(
-                        ui_info.ui.context["object"].update_session_anat_pipeline, 'subject_session')
-                    anat_save_config(
-                        self.anat_pipeline, ui_info.ui.context["object"].project_info.anat_config_file)
-                    self.project_loaded = True
+                ui_info.ui.context["object"].project_info.on_trait_change(
+                    ui_info.ui.context["object"].update_subject_anat_pipeline, 'subject')
+                ui_info.ui.context["object"].project_info.on_trait_change(
+                    ui_info.ui.context["object"].update_session_anat_pipeline, 'subject_session')
+                anat_save_config(
+                    self.anat_pipeline, ui_info.ui.context["object"].project_info.anat_config_file)
+                self.project_loaded = True
 
-                    ui_info.ui.context["object"].project_info.parcellation_scheme = get_anat_process_detail_json(
-                            new_project, 'parcellation_stage', 'parcellation_scheme')
-                    ui_info.ui.context["object"].project_info.freesurfer_subjects_dir = get_anat_process_detail_json(
-                            new_project, 'segmentation_stage', 'freesurfer_subjects_dir')
-                    ui_info.ui.context["object"].project_info.freesurfer_subject_id = get_anat_process_detail_json(
-                            new_project, 'segmentation_stage', 'freesurfer_subject_id')
-                    
-                    dmri_inputs_checked, self.dmri_pipeline = init_dmri_project(
-                            new_project, bids_layout, True)
-                    if self.dmri_pipeline is not None:
-                        if dmri_inputs_checked:
-                            self.dmri_pipeline.number_of_cores = new_project.number_of_cores
-                            print("  .. INFO: Number of cores (pipeline) = %s" %
-                                  self.dmri_pipeline.number_of_cores)
-                            self.dmri_pipeline.parcellation_scheme = ui_info.ui.context[
-                                "object"].project_info.parcellation_scheme
-                            ui_info.ui.context["object"].dmri_pipeline = self.dmri_pipeline
-                            ui_info.ui.context["object"].project_info.on_trait_change(
-                                ui_info.ui.context["object"].update_subject_dmri_pipeline, 'subject')
-                            ui_info.ui.context["object"].project_info.on_trait_change(
-                                ui_info.ui.context["object"].update_session_dmri_pipeline, 'subject_session')
-                            dmri_save_config(self.dmri_pipeline,
-                                             ui_info.ui.context["object"].project_info.dmri_config_file)
-                            self.dmri_inputs_checked = dmri_inputs_checked
-                            ui_info.ui.context["object"].project_info.dmri_available = self.dmri_inputs_checked
-                            self.project_loaded = True
-                            ui_info.ui.context["object"].project_info.on_trait_change(
-                                ui_info.ui.context["object"].update_diffusion_imaging_model, 'diffusion_imaging_model')
+                ui_info.ui.context["object"].project_info.parcellation_scheme = get_anat_process_detail_json(
+                        new_project, 'parcellation_stage', 'parcellation_scheme')
+                ui_info.ui.context["object"].project_info.freesurfer_subjects_dir = get_anat_process_detail_json(
+                        new_project, 'segmentation_stage', 'freesurfer_subjects_dir')
+                ui_info.ui.context["object"].project_info.freesurfer_subject_id = get_anat_process_detail_json(
+                        new_project, 'segmentation_stage', 'freesurfer_subject_id')
 
-                    fmri_inputs_checked, self.fmri_pipeline = init_fmri_project(
+                dmri_inputs_checked, self.dmri_pipeline = init_dmri_project(
                         new_project, bids_layout, True)
-                    if self.fmri_pipeline is not None:
-                        if fmri_inputs_checked:
-                            self.fmri_pipeline.number_of_cores = new_project.number_of_cores
-                            print("  .. INFO: Number of cores (pipeline) = %s" %
-                                  self.fmri_pipeline.number_of_cores)
-                            self.fmri_pipeline.parcellation_scheme = ui_info.ui.context[
-                                "object"].project_info.parcellation_scheme
-                            self.fmri_pipeline.subjects_dir = ui_info.ui.context[
-                                "object"].project_info.freesurfer_subjects_dir
-                            self.fmri_pipeline.subject_id = ui_info.ui.context[
-                                "object"].project_info.freesurfer_subject_id
-                            ui_info.ui.context["object"].fmri_pipeline = self.fmri_pipeline
-                            ui_info.ui.context["object"].project_info.on_trait_change(
-                                ui_info.ui.context["object"].update_subject_fmri_pipeline, 'subject')
-                            ui_info.ui.context["object"].project_info.on_trait_change(
-                                ui_info.ui.context["object"].update_session_fmri_pipeline, 'subject_session')
-                            fmri_save_config(self.fmri_pipeline,
-                                             ui_info.ui.context["object"].project_info.fmri_config_file)
-                            self.fmri_inputs_checked = fmri_inputs_checked
-                            ui_info.ui.context["object"].project_info.fmri_available = self.fmri_inputs_checked
-                            self.project_loaded = True
+                if self.dmri_pipeline is not None and dmri_inputs_checked:
+                    self.dmri_pipeline.number_of_cores = new_project.number_of_cores
+                    print("  .. INFO: Number of cores (pipeline) = %s" %
+                          self.dmri_pipeline.number_of_cores)
+                    self.dmri_pipeline.parcellation_scheme = ui_info.ui.context[
+                        "object"].project_info.parcellation_scheme
+                    ui_info.ui.context["object"].dmri_pipeline = self.dmri_pipeline
+                    ui_info.ui.context["object"].project_info.on_trait_change(
+                        ui_info.ui.context["object"].update_subject_dmri_pipeline, 'subject')
+                    ui_info.ui.context["object"].project_info.on_trait_change(
+                        ui_info.ui.context["object"].update_session_dmri_pipeline, 'subject_session')
+                    dmri_save_config(self.dmri_pipeline,
+                                     ui_info.ui.context["object"].project_info.dmri_config_file)
+                    self.dmri_inputs_checked = dmri_inputs_checked
+                    ui_info.ui.context["object"].project_info.dmri_available = self.dmri_inputs_checked
+                    self.project_loaded = True
+                    ui_info.ui.context["object"].project_info.on_trait_change(
+                        ui_info.ui.context["object"].update_diffusion_imaging_model, 'diffusion_imaging_model')
+
+                fmri_inputs_checked, self.fmri_pipeline = init_fmri_project(
+                    new_project, bids_layout, True)
+                if self.fmri_pipeline is not None and fmri_inputs_checked:
+                    self.fmri_pipeline.number_of_cores = new_project.number_of_cores
+                    print("  .. INFO: Number of cores (pipeline) = %s" %
+                          self.fmri_pipeline.number_of_cores)
+                    self.fmri_pipeline.parcellation_scheme = ui_info.ui.context[
+                        "object"].project_info.parcellation_scheme
+                    self.fmri_pipeline.subjects_dir = ui_info.ui.context[
+                        "object"].project_info.freesurfer_subjects_dir
+                    self.fmri_pipeline.subject_id = ui_info.ui.context[
+                        "object"].project_info.freesurfer_subject_id
+                    ui_info.ui.context["object"].fmri_pipeline = self.fmri_pipeline
+                    ui_info.ui.context["object"].project_info.on_trait_change(
+                        ui_info.ui.context["object"].update_subject_fmri_pipeline, 'subject')
+                    ui_info.ui.context["object"].project_info.on_trait_change(
+                        ui_info.ui.context["object"].update_session_fmri_pipeline, 'subject_session')
+                    fmri_save_config(self.fmri_pipeline,
+                                     ui_info.ui.context["object"].project_info.fmri_config_file)
+                    self.fmri_inputs_checked = fmri_inputs_checked
+                    ui_info.ui.context["object"].project_info.fmri_available = self.fmri_inputs_checked
+                    self.project_loaded = True
 
     def load_project(self, ui_info):
         """Function that creates a new :class:`CMP_Project_InfoUI` instance from an existing project.

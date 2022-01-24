@@ -50,13 +50,13 @@ class ProgressThread(threading.Thread):
                 if self.stages[stage].enabled:
                     if self.stages[stage].has_run():
                         statuses.append(stage + " stage finished!")
-                        c = c + 1
+                        c += 1
                     elif self.stages[stage].is_running():
                         statuses.append(stage + " stage running...")
                     else:
                         statuses.append(stage + " stage waiting...")
                 else:
-                    c = c + 1
+                    c += 1
                     statuses.append(stage + " stage not selected for running!")
             self.pw.stages_status = statuses
         self.pw.main_status = "Processing finished!"

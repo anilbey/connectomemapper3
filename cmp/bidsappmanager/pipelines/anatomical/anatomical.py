@@ -225,17 +225,11 @@ class AnatomicalPipelineUI(AnatomicalPipeline):
             input_message = 'Error during inputs check. No anatomical data available in folder ' + os.path.join(
                 self.base_directory, self.subject) + '/anat/!'
 
-        # diffusion_imaging_model = diffusion_imaging_model[0]
-
-        if gui:
-            # input_notification = Check_Input_Notification(message=input_message,
-            #                                               diffusion_imaging_model_options=diffusion_imaging_model,
-            #                                               diffusion_imaging_model=diffusion_imaging_model)
-            # input_notification.configure_traits()
-            print(input_message)
-
-        else:
-            print(input_message)
+        # input_notification = Check_Input_Notification(message=input_message,
+        #                                               diffusion_imaging_model_options=diffusion_imaging_model,
+        #                                               diffusion_imaging_model=diffusion_imaging_model)
+        # input_notification.configure_traits()
+        print(input_message)
 
         if t1_available:
             valid_inputs = True
@@ -276,16 +270,15 @@ class AnatomicalPipelineUI(AnatomicalPipeline):
         if self.global_conf.subject_session == '':
             anat_deriv_subject_directory = os.path.join(
                 self.base_directory, "derivatives", "cmp", self.subject, 'anat')
+        elif self.global_conf.subject_session not in subject:
+            anat_deriv_subject_directory = os.path.join(self.base_directory, "derivatives", "cmp", subject,
+                                                        self.global_conf.subject_session, 'anat')
+            subject = "_".join((subject, self.global_conf.subject_session))
         else:
-            if self.global_conf.subject_session not in subject:
-                anat_deriv_subject_directory = os.path.join(self.base_directory, "derivatives", "cmp", subject,
-                                                            self.global_conf.subject_session, 'anat')
-                subject = "_".join((subject, self.global_conf.subject_session))
-            else:
-                anat_deriv_subject_directory = os.path.join(self.base_directory, "derivatives", "cmp",
-                                                            subject.split(
-                                                                "_")[0], self.global_conf.subject_session,
-                                                            'anat')
+            anat_deriv_subject_directory = os.path.join(self.base_directory, "derivatives", "cmp",
+                                                        subject.split(
+                                                            "_")[0], self.global_conf.subject_session,
+                                                        'anat')
 
         T1_file = os.path.join(anat_deriv_subject_directory,
                                subject + '_T1w_head.nii.gz')
@@ -335,9 +328,9 @@ class AnatomicalPipelineUI(AnatomicalPipeline):
         cnt1 = 0
         cnt2 = 0
         for roiv_file in roiv_files:
-            cnt1 = cnt1 + 1
+            cnt1 += 1
             if os.path.isfile(roiv_file):
-                cnt2 = cnt2 + 1
+                cnt2 += 1
         if cnt1 == cnt2:
             roivs_available = True
         else:
@@ -347,7 +340,13 @@ class AnatomicalPipelineUI(AnatomicalPipeline):
             error(message=error_message, title="Error",
                   buttons=['OK', 'Cancel'], parent=None)
 
-        if t1_available is True and brain_available is True and brainmask_available is True and wm_available is True and roivs_available is True:
+        if (
+            t1_available
+            and brain_available
+            and brainmask_available
+            and wm_available
+            and roivs_available
+        ):
             print("valid deriv/anat output")
             valid_output = True
 

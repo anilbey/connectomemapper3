@@ -89,11 +89,9 @@ package_data = {'cmp':
                  'data/segmentation/thalamus2018/*.*']
                 }
 
-# Extract package requirements from Conda environment.yml
-include_conda_pip_dependencies = False
 install_requires = []
 dependency_links = []
-if include_conda_pip_dependencies:
+if include_conda_pip_dependencies := False:
     path = os.path.join(directory, 'ubuntu16.04', 'environment.yml')
     with open(path) as read_file:
         state = "PREAMBLE"
@@ -107,9 +105,7 @@ if include_conda_pip_dependencies:
                 line = '=='.join(line.split('='))
                 line = line.split('==')[0]
                 # Python is a valid dependency for Conda but not setuptools, so skip it
-                if "python" in line:
-                    pass
-                else:
+                if "python" not in line:
                     # Appends to dependencies
                     install_requires.append(line)
             elif state == "PIP_DEPS":

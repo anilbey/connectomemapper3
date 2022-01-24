@@ -139,13 +139,10 @@ def get_icon(path):
     icon : ImageResource
         Return an instance of `ImageResource` or None is there is not graphical backend.
     """
-    on_rtd = os.environ.get("READTHEDOCS") == "True"
-    if on_rtd:
-        print('READTHEDOCS: Return None for icon')
-        icon = None
-    else:
-        icon = ImageResource(path)
-    return icon
+    if not (on_rtd := os.environ.get("READTHEDOCS") == "True"):
+        return ImageResource(path)
+    print('READTHEDOCS: Return None for icon')
+    return None
 
 
 class CMP_Project_InfoUI(CMP_Project_Info):
@@ -930,41 +927,33 @@ class CMP_BIDSAppWindow(HasTraits):
                                      extensions='nii.gz',
                                      return_type='file')
 
-        if not smri_files:
-            anat_inputs_checked = False
-        else:
-            anat_inputs_checked = True
-
+        anat_inputs_checked = bool(smri_files)
         print(f'  .. T1w available: {anat_inputs_checked}')
 
-        # Check if dMRI data is available in the dataset
-        dmri_files = bids_layout.get(datatype='dwi',
-                                     suffix='dwi',
-                                     extensions='nii.gz',
-                                     return_type='file')
-
-        if not dmri_files:
-            self.dmri_inputs_checked = False
-            self.run_dmri_pipeline = False
-        else:
+        if dmri_files := bids_layout.get(
+            datatype='dwi', suffix='dwi', extensions='nii.gz', return_type='file'
+        ):
             self.dmri_inputs_checked = True
             self.run_dmri_pipeline = True
 
+        else:
+            self.dmri_inputs_checked = False
+            self.run_dmri_pipeline = False
         print(f'  .. DWI available: {self.dmri_inputs_checked}')
 
-        # Check if fMRI data is available in the dataset
-        fmri_files = bids_layout.get(task='rest',
-                                     datatype='func',
-                                     suffix='bold',
-                                     extensions='nii.gz',
-                                     return_type='file')
-        if not fmri_files:
-            self.fmri_inputs_checked = False
-            self.run_fmri_pipeline = False
-        else:
+        if fmri_files := bids_layout.get(
+            task='rest',
+            datatype='func',
+            suffix='bold',
+            extensions='nii.gz',
+            return_type='file',
+        ):
             self.fmri_inputs_checked = True
             self.run_fmri_pipeline = True
 
+        else:
+            self.fmri_inputs_checked = False
+            self.run_fmri_pipeline = False
         print(f'  .. rsfMRI available: {self.fmri_inputs_checked}')
 
         # Initialize output directory to be /bids_dir/derivatives
@@ -1008,11 +997,7 @@ class CMP_BIDSAppWindow(HasTraits):
         """Callback function when ``number_of_parallel_procs`` is updated."""
         number_of_threads_max = int((multiprocessing.cpu_count() - 1) / new)
 
-        if number_of_threads_max > 4:
-            self.number_of_threads_max = 4
-        else:
-            self.number_of_threads_max = number_of_threads_max
-
+        self.number_of_threads_max = min(number_of_threads_max, 4)
         print('  .. INFO : Update number of threads max to : {}'.format(self.number_of_threads_max))
 
     def update_run_anat_pipeline(self, new):
@@ -1206,10 +1191,9 @@ class CMP_BIDSAppWindow(HasTraits):
 
         print_blue('... BIDS App execution command: {}'.format(' '.join(cmd)))
 
-        proc = Popen(cmd)
         # proc = Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-        return proc
+        return Popen(cmd)
 
     def start_bidsapp_participant_level_process_with_datalad(self, bidsapp_tag, participant_labels):
         """Create and run the BIDS App command with Datalad.
@@ -1284,10 +1268,9 @@ class CMP_BIDSAppWindow(HasTraits):
 
         print_blue('... Datalad cmd : {}'.format(' '.join(cmd)))
 
-        proc = Popen(cmd, cwd=os.path.join(self.bids_root))
         # proc = Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=os.path.join(self.bids_root,'derivatives'))
 
-        return proc
+        return Popen(cmd, cwd=os.path.join(self.bids_root))
 
     @classmethod
     def manage_bidsapp_procs(self, proclist):
@@ -1515,8 +1498,8 @@ class CMP_BIDSAppWindow(HasTraits):
             if self.run_dmri_pipeline:
                 datalad_get_list.append(self.fmri_config)
 
-            if session_structure:
-                for label in self.list_of_subjects_to_be_processed:
+            for label in self.list_of_subjects_to_be_processed:
+                if session_structure:
                     datalad_get_list.append(
                         'sub-{}/ses-*/anat/sub-{}*_T1w.*'.format(label, label))
                     datalad_get_list.append(
@@ -1527,8 +1510,7 @@ class CMP_BIDSAppWindow(HasTraits):
                     if self.run_fmri_pipeline:
                         datalad_get_list.append(
                             'sub-{}/ses-*/func/sub-{}*_bold.*'.format(label, label))
-            else:
-                for label in self.list_of_subjects_to_be_processed:
+                else:
                     datalad_get_list.append(
                         'sub-{}/anat/sub-{}*_T1w.*'.format(label, label))
                     datalad_get_list.append(
@@ -1572,9 +1554,6 @@ class CMP_BIDSAppWindow(HasTraits):
             except Exception:
                 print_error("    DATALAD ERROR: Failed to run datalad rev-status")
 
-        # maxprocs = multiprocessing.cpu_count()
-        processes = []
-
         self.docker_running = True
 
         if self.datalad_is_available and self.data_provenance_tracking:
@@ -1586,9 +1565,8 @@ class CMP_BIDSAppWindow(HasTraits):
             proc = self.start_bidsapp_participant_level_process(self.bidsapp_tag,
                                                                 self.list_of_subjects_to_be_processed)
 
-        processes.append(proc)
-
-        while len(processes) > 0:
+        processes = [proc]
+        while processes:
             self.manage_bidsapp_procs(processes)
 
         if self.datalad_is_available and self.data_provenance_tracking:
@@ -1947,9 +1925,7 @@ class CMP_InspectorWindow(HasTraits):
         self.dmri_inputs_checked = dmri_inputs_checked
         self.fmri_inputs_checked = fmri_inputs_checked
 
-        aborded = self.select_subject()
-
-        if aborded:
+        if aborded := self.select_subject():
             raise Exception(
                 BColors.FAIL +
                 ' .. ABORDED: The quality control window will not be displayed.' +

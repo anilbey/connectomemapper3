@@ -167,15 +167,8 @@ class ConnectomeStage(Stage):
 
             mat = dwi_outputs['dwi.@connectivity_matrices']
 
-            map_scale = "default"
-            if self.config.log_visualization:
-                map_scale = "log"
-
-            if self.config.circular_layout:
-                layout = 'circular'
-            else:
-                layout = 'matrix'
-
+            map_scale = "log" if self.config.log_visualization else "default"
+            layout = 'circular' if self.config.circular_layout else 'matrix'
             if isinstance(mat, str):
                 # print("is str")
                 if 'gpickle' in mat:
@@ -199,8 +192,7 @@ class ConnectomeStage(Stage):
                                                                                     map_scale]
 
             else:
-                # print("is list")
-                for mat in dwi_outputs['dwi.@connectivity_matrices']:
+                for mat in mat:
                     # print("mat : %s" % mat)
                     if 'gpickle' in mat:
                         con_name = " ".join(os.path.basename(
@@ -221,8 +213,9 @@ class ConnectomeStage(Stage):
                                                                                         self.config.subject + ' - ' + con_name + ' - ' + metric_str,
                                                                                         map_scale]
 
-            self.inspect_outputs = sorted([key for key in list(self.inspect_outputs_dict.keys())],
-                                          key=str.lower)
+            self.inspect_outputs = sorted(
+                list(list(self.inspect_outputs_dict.keys())), key=str.lower
+            )
             # print(self.inspect_outputs)
 
     def has_run(self):
